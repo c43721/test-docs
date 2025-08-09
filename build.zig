@@ -33,6 +33,11 @@ pub fn build(b: *std.Build) !void {
         _ = website.addCopyFile(html, html_path);
     }
 
+    // Add the index html to the project
+    const index_page = b.path("./README.md");
+    const index_html = markdown2html(b, pandoc, index_page);
+    _ = website.addCopyFile(index_html, "index.html");
+
     b.installDirectory(.{
         .source_dir = website.getDirectory(),
         .install_dir = .prefix,
