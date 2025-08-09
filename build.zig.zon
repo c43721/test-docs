@@ -1,0 +1,20 @@
+.{
+    .name = .build_docs,
+    .fingerprint = 0x562b465d328b9ec7,
+    .version = "0.0.0",
+    .dependencies = .{
+        .pandoc_macos_x86_64 = .{
+            .url = "https://github.com/jgm/pandoc/releases/download/3.7.0.2/pandoc-3.7.0.2-x86_64-macOS.zip",
+            .hash = "N-V-__8AAIoMBQfQY6jBMOQuQ2Bpgms0hxKWj7EjD1YWDe5i",
+        },
+        .pandoc_macos_arm64 = .{
+            .url = "https://github.com/jgm/pandoc/releases/download/3.7.0.2/pandoc-3.7.0.2-arm64-macOS.zip",
+            .hash = "N-V-__8AAHpKQAsoXWwI6_1_-uTVVUvIYt_MaKp-8nH7UxjW",
+        },
+        .pandoc_windows_x86_64 = .{
+            .url = "https://github.com/jgm/pandoc/releases/download/3.7.0.2/pandoc-3.7.0.2-windows-x86_64.zip",
+            .hash = "N-V-__8AAMLTgg3ZiHfIM8kOZQCR65uvscMeIlCsDxtX1YIH",
+        },
+    },
+    .paths = .{"."},
+}
