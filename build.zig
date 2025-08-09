@@ -15,7 +15,7 @@ pub fn build(b: *std.Build) !void {
 
     const website = b.addWriteFiles();
 
-    const pandoc = pandoc_dependency.path("pandoc");
+    const pandoc = pandoc_dependency.path("pandoc.exe");
 
     const markdown_files = b.run(&.{ "git", "ls-files", "content/*.md" });
     var lines = std.mem.tokenizeScalar(u8, markdown_files, '\n');
