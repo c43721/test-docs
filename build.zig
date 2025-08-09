@@ -59,7 +59,8 @@ fn markdown2html(
 ) std.Build.LazyPath {
     const pandoc_step = std.Build.Step.Run.create(b, "run pandoc");
     pandoc_step.addFileArg(pandoc);
-    pandoc_step.addArgs(&.{ "--from=markdown", "--to=html5" });
+    pandoc_step.addArgs(&.{ "--from=gfm+gfm_auto_identifiers", "--to=html5" });
+    pandoc_step.addPrefixedFileArg("--lua-filter=", b.path("pandoc/anchor-links.lua"));
     pandoc_step.addFileArg(markdown);
     return pandoc_step.captureStdOut();
 }
