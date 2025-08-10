@@ -18,7 +18,7 @@ pub fn build(b: *std.Build) !void {
 
     const pandoc = pandoc_dependency.path("pandoc.exe");
 
-    const markdown_files = b.run(&.{ "git", "ls-files", "content/*.md" });
+    const markdown_files = b.run(&.{ "git", "ls-files", "content/*/**.md" });
     var lines = std.mem.tokenizeScalar(u8, markdown_files, '\n');
 
     const clean_zigout_step = b.addRemoveDirTree(b.path("zig-out"));
