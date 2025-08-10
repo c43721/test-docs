@@ -1,5 +1,6 @@
 const std = @import("std");
 const builtin = @import("builtin");
+const Template = @import("template.zig").Template;
 const os = builtin.os;
 const cpu = builtin.cpu;
 
@@ -13,12 +14,23 @@ pub fn build(b: *std.Build) !void {
     else
         return error.UnsupportedHost;
 
-    const website = b.addWriteFiles();
+    const raw_outputs = b.addWriteFiles();
 
     const pandoc = pandoc_dependency.path("pandoc.exe");
 
     const markdown_files = b.run(&.{ "git", "ls-files", "content/*.md" });
     var lines = std.mem.tokenizeScalar(u8, markdown_files, '\n');
+
+    const clean_zigout_step = b.addRemoveDirTree(b.path("zig-out"));
+
+    const assets = b.addWriteFiles();
+    const add_assets_step = b.addInstallDirectory(.{
+        .source_dir = assets.addCopyDirectory(b.path("assets"), "assets/", .{}),
+        .install_dir = .prefix,
+        .install_subdir = ".",
+    });
+
+    add_assets_step.step.dependOn(&clean_zigout_step.step);
 
     while (lines.next()) |file_path| {
         const markdown = b.path(file_path);
@@ -30,19 +42,37 @@ pub fn build(b: *std.Build) !void {
         html_path = cut_suffix(html_path, ".md").?;
         html_path = b.fmt("{s}.html", .{html_path});
 
-        _ = website.addCopyFile(html, html_path);
+        _ = raw_outputs.addCopyFile(html, html_path);
     }
 
     // Add the index html to the project
     const index_page = b.path("./README.md");
     const index_html = markdown2html(b, pandoc, index_page);
-    _ = website.addCopyFile(index_html, "index.html");
+    _ = raw_outputs.addCopyFile(index_html, "index.html");
 
-    b.installDirectory(.{
-        .source_dir = website.getDirectory(),
-        .install_dir = .prefix,
+    const add_raw_files_step = b.addInstallDirectory(.{
+        .source_dir = raw_outputs.getDirectory(),
+        .install_dir = .{ .custom = "raw" },
         .install_subdir = ".",
     });
+
+    const transform_source = b.addExecutable(.{
+        .name = "transform",
+        .root_source_file = b.path("transform.zig"),
+        .target = b.graph.host,
+    });
+
+    const transform_run = b.addRunArtifact(transform_source);
+    transform_run.addArg("zig-out");
+    transform_run.addDirectoryArg(raw_outputs.getDirectory());
+
+    transform_run.step.dependOn(&add_raw_files_step.step);
+
+    const clean_raw_files_step = b.addRemoveDirTree(b.path("zig-out/raw/"));
+
+    clean_raw_files_step.step.dependOn(&transform_run.step);
+
+    b.getInstallStep().dependOn(&clean_raw_files_step.step);
 }
 
 fn cut_prefix(text: []const u8, prefix: []const u8) ?[]const u8 {
