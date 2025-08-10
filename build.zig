@@ -50,29 +50,28 @@ pub fn build(b: *std.Build) !void {
     const index_html = markdown2html(b, pandoc, index_page);
     _ = raw_outputs.addCopyFile(index_html, "index.html");
 
-    const add_raw_files_step = b.addInstallDirectory(.{
-        .source_dir = raw_outputs.getDirectory(),
-        .install_dir = .{ .custom = "raw" },
-        .install_subdir = ".",
-    });
-
     const transform_source = b.addExecutable(.{
         .name = "transform",
         .root_source_file = b.path("transform.zig"),
         .target = b.graph.host,
     });
 
+    const transformed_outputs = b.addWriteFiles();
+
     const transform_run = b.addRunArtifact(transform_source);
-    transform_run.addArg("zig-out");
     transform_run.addDirectoryArg(raw_outputs.getDirectory());
+    transform_run.addDirectoryArg(transformed_outputs.getDirectory());
 
-    transform_run.step.dependOn(&add_raw_files_step.step);
+    const write_transformed_step = b.addInstallDirectory(.{
+        .source_dir = transformed_outputs.getDirectory(),
+        .install_dir = .prefix,
+        .install_subdir = ".",
+    });
 
-    const clean_raw_files_step = b.addRemoveDirTree(b.path("zig-out/raw/"));
+    transform_run.step.dependOn(&add_assets_step.step);
+    write_transformed_step.step.dependOn(&transform_run.step);
 
-    clean_raw_files_step.step.dependOn(&transform_run.step);
-
-    b.getInstallStep().dependOn(&clean_raw_files_step.step);
+    b.getInstallStep().dependOn(&write_transformed_step.step);
 }
 
 fn cut_prefix(text: []const u8, prefix: []const u8) ?[]const u8 {
